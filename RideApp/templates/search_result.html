@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+
+
+{% if matched_transportation_requests %}
+<table class="table">
+    <thead class="thead-dark">
+      <tr class="text-uppercase">
+        <td scope="col">Accepted Person Details</td>
+        <td scope="col">From</td>
+        <td scope="col">To</td>
+        <td scope="col">Date and Time</td>
+        <td scope="col">No of Assets</td>
+        <td scope="col">Asset Type</td>
+        <td scope="col">Asset Sensitivity</td>
+        <td scope="col">Whom To Deliver</td>
+        <td scope="col">Status</td>
+      </tr>
+    </thead>
+    <tbody>
+        {% for ride in matched_transportation_requests %}
+      <tr>
+        <td scope="row">{{ride.rider}} <br/> {{ride.rider.phone}}</td>
+        <td>{{ride.from_location}}</td>
+        <td>{{ride.to_location}}</td>
+        <td>{{ride.date_time}}</td>
+        <td>{{ride.assets_quanity}}</td>
+        <td>{{ride.asset_type}}</td>
+        <td>{{ride.asset_sensitivity}}</td>
+        <td>{{ride.whom_to_deliver}}</td>
+        <td>
+        
+          
+          {% if ride.apply_status == 'Apply' %}
+
+          <a href="ride_apply/{{ride.id}}/" class="text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+          </a>
+          {% elif ride.apply_status == 'PENDING' %}
+            <span class="text-warning"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-check2-circle" viewBox="0 0 16 16">
+              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+            </svg></span>
+
+
+            {% elif ride.apply_status == 'CONFIRMED' %}
+            <span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-check2-circle" viewBox="0 0 16 16">
+              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+            </svg></span>
+
+
+            {% elif ride.apply_status == 'EXPIRED' %}
+            <span class="text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-check2-circle" viewBox="0 0 16 16">
+              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+            </svg></span>
+
+            
+
+          {% endif %}
+
+          {{ride.apply_status}}
+            
+            
+            
+
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+
+  {% if matched_transportation_requests.has_other_pages %}
+  <ul class="pagination">
+    {% if matched_transportation_requests.has_previous %}
+      <li><a href="?page={{ matched_transportation_requests.previous_page_number }}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&laquo;</span></li>
+    {% endif %}
+    {% for i in matched_transportation_requests.paginator.page_range %}
+      {% if matched_transportation_requests.number == i %}
+        <li class="active btn btn-sm btn-secondary"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a class="btn btn-sm btn-outline-primary mx-1" href="?page={{ i }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if matched_transportation_requests.has_next %}
+      <li><a href="?page={{ matched_transportation_requests.next_page_number }}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+
+  {% else %}
+
+  No more pages
+
+{% endif %}
+
+
+
+{% else %}
+
+<div class="text-center text-light bg-danger">
+
+No matching rides found. Try changing some paramters.
+
+</div>
+
+
+{% endif %}
+
+
+{% endblock %}

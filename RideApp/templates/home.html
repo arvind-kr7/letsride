@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+<!-- Asset Transport Requests Application Table -->
+
+{% if application_list %}
+
+<table class="table">
+    <thead class="thead-dark">
+      <tr>
+        <th scope="col">From</th>
+        <th scope="col">To</th>
+        <th scope="col">Date and Time</th>
+        <th scope="col">No of Assets</th>
+        <th scope="col">Asset Type</th>
+        <th scope="col">Asset Sensitivity</th>
+        <th scope="col">Whom To Deliver</th>
+        <th scope="col">Accepted Person Details</th>
+        <th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for application in application_list %}
+      <tr>
+        <td>{{application.ride_travel_info.from_location}}</td>
+        <td>{{application.ride_travel_info.to_location}}</td>
+        <td>{{application.assetTransportationRequest.date_time}}</td>
+        <td>{{application.assetTransportationRequest.assets_quanity}}</td>
+        <td>{{application.assetTransportationRequest.asset_type}}</td>
+        <td>{{application.assetTransportationRequest.asset_sensitivity}}</td>
+        <td>{{application.assetTransportationRequest.whom_to_deliver}}</td>
+        <td>{{application.applicant.name}} <br/> {{application.applicant.phone}}</td>
+
+        <td>
+            
+            {% if statusform %}
+            <form method="POST" id="{{application.id}}">
+                {% csrf_token %}
+    
+            <select name="status" id="status">
+              {% for i in statusform %}
+              <option value="{{i.0}}" 
+              
+              {% if i.0 == application.status %}
+                selected
+              {% endif %}
+              >{{i.1}}</option>
+              {% endfor %}
+            </select>
+            <input type="text" hidden name = "application_id" value="{{application.id}}" id="{{application.id}}"/> <button type="submit" class="btn btn-primary btn-sm">Update</button>
+            </form>
+            {% else %}
+            {% if application.status == 'PENDING' %}
+              
+            <span class="badge badge-pill bg-warning"> {{application.status}}</span>
+
+            {% elif application.status == 'CONFIRMED' %}
+            <span class="badge badge-pill bg-success"> {{application.status}}</span>
+
+            {% else %}
+            <span class="badge badge-pill bg-danger"> {{application.status}}</span>
+
+            {% endif %}
+
+           
+            {% endif %}
+
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+
+  {% if application_list.has_other_pages %}
+  <ul class="pagination">
+    {% if application_list.has_previous %}
+      <li><a href="?page={{ application_list.previous_page_number }}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&laquo;</span></li>
+    {% endif %}
+    {% for i in application_list.paginator.page_range %}
+      {% if application_list.number == i %}
+        <li class="active btn btn-sm btn-secondary"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a class="btn btn-sm btn-outline-primary mx-1" href="?page={{ i }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if application_list.has_next %}
+      <li><a href="?page={{ application_list.next_page_number }}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+
+  {% else %}
+
+  No more pages
+
+{% endif %}
+
+
+{% else %}
+
+No applications applied
+<a class="btn btn-primary" href="{%  url 'search' %}">Search and apply for one</a>
+
+
+{% endif %}
+
+
+
+
+
+{% endblock %}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> {{title}} | Let's Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
+</head>
+<body>
+
+    <nav class="navbar navbar-fixed-top navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/">Lets Ride</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+          <ul class="container navbar-nav mr-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="{%  url 'home' %}">Home</a>
+            </li>
+            {% if not loggedin %}
+            <li class="nav-item">
+              <a class="nav-link" href="{%  url 'signin' %}">Sign in</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{%  url 'signup' %}">Sign up</a>
+            </li>
+            {% else %}
+            {% if loggedin.type == 'Rider'  %}
+            <li class="nav-item">
+             
+              <a class="nav-link" href="{%  url 'add_ride' %}">Add a Ride</a>
+            </li>
+            <li class="nav-item">
+             
+              <a class="nav-link" href="{%  url 'ride_list' %}">Rides</a>
+            </li>
+            {% endif %}
+
+            <li class="nav-item">
+
+              <a class="nav-link" href="{%  url 'search_ride' %}">Search a Ride</a>
+            </li>
+
+          
+
+            <li class="nav-item">
+              <a class="nav-link" href="{%  url 'signout' %}">Sign out</a>
+            </li>
+
+            {% endif %}
+          </ul>
+          {% if loggedin %}
+          <span class="navbar-text">
+            {{loggedin}} ({{loggedin.type}})
+          </span>
+
+          {% endif %}
+        </div>
+      </nav>
+
+
+    {% if messages %}
+        
+        {% for message in messages %}
+            <div class="position-absolute top-2 end-0 alert alert-{{ message.tags }} d-flex align-items-center justify-content-between alert-dismissible"  role="alert">
+                <div> <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Info:"><use xlink:href="#info-fill"/></svg>
+                    {{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+            </div>
+        
+        {% endfor %}
+        
+    {% endif %}
+
+
+    
+    <div class="d-flex justify-content-center align-items-center card shadow-sm mt-5 p-5 ">
+
+   {% block content %}
+
+   {% endblock %}
+  </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+    <script>
+      $(document).ready(function() {
+        $(".alert-dismissible").fadeTo(3000, 500).slideUp(500, function(){
+            $(".alert-dismissible").alert('close');
+        });
+      });
+    </script>
+</body>
+</html>
