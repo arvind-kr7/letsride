@@ -4,7 +4,6 @@ from . import views
 from .views import SignUpView
 urlpatterns =[
     path('', views.index, name='index'),
-    path('api2/', views.api, name='api'),
     path('search', views.search, name='search_ride'),
 
     ######################## USER MANAGEMENT #######################

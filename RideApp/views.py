@@ -104,11 +104,14 @@ def home(request):
             # print(data)
 
     
-    if not LoggedUser.Paginator:
-        application_list = Application.objects.filter(applicant=LoggedUser.USER) if LoggedUser.getUserType() == UserType.REQUESTER  else Application.objects.all()
+    # if not LoggedUser.Paginator:
+    if LoggedUser.getUserType() == UserType.REQUESTER:
+        application_list = Application.objects.filter(applicant=LoggedUser.USER) 
+    else:
+        application_list = Application.objects.filter(ride_travel_info__rider=LoggedUser.USER) 
 
-        application_list = application_list.order_by('assetTransportationRequest__date_time')
-        LoggedUser.Paginator = Paginator(application_list,page)
+    application_list = application_list.order_by('assetTransportationRequest__date_time')
+    LoggedUser.Paginator = Paginator(application_list,1)
 
             
 
@@ -292,6 +295,8 @@ def addRide(request):
             ride.save()
 
             messages.success(request, 'Ride Travel added successfully')
+
+            return redirect('home')
 
 
 
@@ -486,16 +491,17 @@ def ride_apply(request, ride_id):
     ride = RideTravelInfo.objects.get(id=ride_id)
     applicant = Requester.objects.get(user=request.user)
     print(ride)
-    if not LoggedUser.TRANSPORTREQUEST_SAVED:
-        LoggedUser.TRANSPORTREQUEST = AssetTransportationRequest.objects.create(**LoggedUser.TRANSPORTREQUEST)
-        LoggedUser.TRANSPORTREQUEST.save()
-        LoggedUser.TRANSPORTREQUEST_SAVED = True
-        messages.success(request, "Asset Transport Request form saved")
+    # if not LoggedUser.TRANSPORTREQUEST_SAVED:
+    LoggedUser.TRANSPORTREQUEST = AssetTransportationRequest.objects.create(**LoggedUser.TRANSPORTREQUEST)
+    LoggedUser.TRANSPORTREQUEST.save()
+    LoggedUser.TRANSPORTREQUEST_SAVED = True
+    messages.success(request, "Asset Transport Request form saved")
     
     LoggedUser.SearchList = None
     application = Application.objects.create(applicant=applicant, assetTransportationRequest= LoggedUser.TRANSPORTREQUEST, ride_travel_info= ride)
     application.save()
 
     messages.success(request, "Application successfully applied")
-    return HttpResponse(f'Apply for Transportation Request {ride_id} {ride} {application}')
+    # return HttpResponse(f'Apply for Transportation Request {ride_id} {ride} {application}')
+    return redirect('home')
 

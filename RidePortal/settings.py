@@ -45,9 +45,8 @@ INSTALLED_APPS = [
     'RideApp',
     "crispy_forms",
     "crispy_bootstrap5",
-    'corsheaders',
-    'rest_framework',
-    "rest_framework_simplejwt"
+   
+    
 ]
 
 MIDDLEWARE = [
@@ -63,10 +62,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'RidePortal.urls'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication'),
-    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend')
-}
+
 
 TEMPLATES = [
     {
