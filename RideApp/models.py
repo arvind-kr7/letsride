@@ -54,6 +54,7 @@ class Rider(models.Model):
     
 
 class AssetTransportationRequest(models.Model):
+    requester= models.ForeignKey(Requester, on_delete=models.CASCADE)
     from_location = models.CharField(max_length=200)
     to_location = models.CharField(max_length=200)
     date_time = models.DateTimeField(default=datetime.datetime.now(),)

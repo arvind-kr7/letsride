@@ -103,17 +103,9 @@
 
 
 {% else %}
-
-
-{% if loggedin.type == 'Requester' %}
-
-No applications applied
-<a class="btn btn-primary" href="{%  url 'search_ride' %}">Search and apply for one</a>
-{% else %}
-
 No application received
 
-{% endif %}
+
 
 {% endif %}
 

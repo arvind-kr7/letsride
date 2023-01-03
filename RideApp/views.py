@@ -1,23 +1,14 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
-from django.views import generic
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 
 from django.template.response import TemplateResponse
-
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from django.utils import timezone
-from django.utils.encoding import smart_str
-# Create your views here.
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+# Forms
 
 from .forms import AssetTransportRequestForm, SignupForm, LoginForm, AddRideForm, ApplicationStatusUpdateForm
-from django.contrib.auth import get_user_model
-from django.contrib.auth.backends import ModelBackend
-
-import datetime
 
 
 # Models
@@ -25,35 +16,27 @@ import datetime
 from .models import Requester, Rider, AssetTransportationRequest, RideTravelInfo, Application
 from .models import UserType, AppStatus
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+### Session's user Related Info
+
+def loggeduser(user):
 
 
+    find_user= None
+    try:
+        find_user =  Requester.objects.get(user=user)
+    except Exception as e:
+        find_user = Rider.objects.get(user=user)
 
-### Session Related Info
-class LoggedUser:
-    USER = None
-    TRANSPORTREQUEST = None
-    TRANSPORTREQUEST_SAVED = False
-    Paginator = None
+    return find_user
 
-    def __init__(self):
-        self.USER = LoggedUser.USER
 
-    def getUserName():
-        return LoggedUser.USER.name
-
-    def getUserEmail():
-        return LoggedUser.USER.email
-
-    def getUserType():
-        return LoggedUser.USER.type
-    
 
 def isAuthorised(request):
     if not request.user.is_authenticated:
         return redirect("signin")
 
-    if LoggedUser.getUserType() != UserType.RIDER:
+    if loggeduser(request.user).type != UserType.RIDER:
         return HttpResponse('Not authorised to access this page')
 
 
@@ -79,13 +62,23 @@ def index(request):
 
 def home(request):
 
-    if LoggedUser.USER is None:
+    print("request.user.is_anonymous", request.user.is_anonymous)
+
+    if not request.session.get('loggedin', False):
         return redirect('signout')
     # form = AssetTransportRequestForm()
     # return HttpResponse("Hello, World!")
 
     if not request.user.is_authenticated:
         return redirect("signin")
+
+    user = loggeduser(request.user)
+
+    if user.type == UserType.REQUESTER: 
+        context = {'title': 'Home', 'loggedin':user, 'search_requests':AssetTransportationRequest.objects.filter(requester=user)}
+        return render(request, 'req_home.html', context=context)
+
+
 
     page = request.GET.get('page', 1)
 
@@ -104,24 +97,10 @@ def home(request):
             # print(data)
 
     
-    # if not LoggedUser.Paginator:
-    if LoggedUser.getUserType() == UserType.REQUESTER:
-        application_list = Application.objects.filter(applicant=LoggedUser.USER) 
-    else:
-        application_list = Application.objects.filter(ride_travel_info__rider=LoggedUser.USER) 
+  
+    application_list = Application.objects.filter(ride_travel_info__rider=user).order_by('assetTransportationRequest__date_time')
 
-    application_list = application_list.order_by('assetTransportationRequest__date_time')
-    LoggedUser.Paginator = Paginator(application_list,1)
-
-            
-
-
-
-    # context = {'title': 'Home', 'name': LoggedUser.getUserName(), 'email': LoggedUser.getUserEmail(), 'type': LoggedUser.getUserType(), 'loggedin':LoggedUser.USER}
-        
-    paginator = LoggedUser.Paginator
-
-    print("paginator", paginator.num_pages, paginator.count)
+    paginator = Paginator(application_list, 1)
     try:
         application_list = paginator.page(page)   
     except PageNotAnInteger:
@@ -130,19 +109,14 @@ def home(request):
         application_list = paginator.page(paginator.num_pages)
 
 
-    context={'title':'Home', 'application_list':application_list, 'loggedin':LoggedUser.USER}
-    if LoggedUser.getUserType() == UserType.RIDER:
-        context['statusform'] = AppStatus.choices
+    context={'title':'Home', 'application_list':application_list, 'loggedin':user, 'statusform': AppStatus.choices}
 
 
-    return render(request, 'home.html', context=context)
+    return render(request, 'rider_home.html', context=context)
     # return HttpResponse(content.render())
 
 
-class SignUpView(generic.CreateView):
-    form_class = UserCreationForm
-    success_url = reverse_lazy("login")
-    template_name = "signup.html"
+
 
 
 ######################### Requester
@@ -231,8 +205,10 @@ def signin(request):
             except Exception as e:
                 find_user = Rider.objects.get(user=user)
             if find_user is not None:
-                LoggedUser.USER = find_user
+                
                 login(request, user)
+
+                request.session['loggedin']=True
                 messages.success(request, f'Login Successful. Welcome, {find_user.name}')
                 # return render(request, "home.html", {'name': find_user.name, 'type': find_user.type, 'email': find_user.email})  
                 return redirect('home')          
@@ -246,9 +222,11 @@ def signout(request):
     if not request.user.is_authenticated:
         return redirect("signin")
         
-    LoggedUser.Paginator = None
-    LoggedUser.USER = None
     logout(request)
+    try:
+        del request.session['loggedin']
+    except KeyError:
+        pass
 
     messages.info(request, 'Logout successful !!')
 
@@ -258,7 +236,7 @@ def signout(request):
 
 def addRide(request):
 
-    if LoggedUser.USER is None:
+    if not request.session.get('loggedin', False):
         return redirect('signout')
 
     if not request.user.is_authenticated:
@@ -267,8 +245,8 @@ def addRide(request):
     # if LoggedUser.USER is None:
     #     LoggedUser.USER = Rider.objects.get(user= request.user)
     
-
-    if LoggedUser.getUserType() != UserType.RIDER:
+    user = loggeduser(request.user)
+    if user.type != UserType.RIDER:
         return HttpResponse(f'Not authorised to access this page {request.user}')
         
 
@@ -278,18 +256,10 @@ def addRide(request):
     if request.method == 'POST':
         if form.is_valid():
             data = form.cleaned_data
-            rider = LoggedUser.USER
-            data['rider'] = rider
+           
+            data['rider'] = user
             print("Add Ride form is valid", data)
-            
-
-            
-            # from_location = data['from_location']
-            # to_location = data['to_location']
-            # date_time = data['date_time']
-            # flexible_timings = data['flexible_timings']
-            # travel_medium = data['travel_medium']
-            # assets_quanity = data['assets_quanity']
+    
 
             ride = RideTravelInfo.objects.create(**data)
             ride.save()
@@ -299,9 +269,7 @@ def addRide(request):
             return redirect('home')
 
 
-
-
-    context = {'title': 'Add Ride', 'form': form}
+    context = {'title': 'Add Ride', 'form': form, 'loggedin': user}
 
     # print(context)
     # return HttpResponse('Add a Ride Travel Info')
@@ -312,14 +280,14 @@ def addRide(request):
 
 def editRide(request, ride_id):
 
-    if LoggedUser.USER is None:
+    if not request.session.get('loggedin', False):
         return redirect('signout')
 
 
     if not request.user.is_authenticated:
         return redirect("signin")
 
-    if LoggedUser.getUserType() != UserType.RIDER:
+    if loggeduser(request.user).type != UserType.RIDER:
         return HttpResponse('Not authorised to access this page')
 
     ride = None
@@ -368,17 +336,20 @@ def editRide(request, ride_id):
 
 def rideList(request):
 
-    if LoggedUser.USER is None:
+  
+
+    if not request.session.get('loggedin', False):
         return redirect('signout')
 
 
     if not request.user.is_authenticated:
         return redirect("signin")
 
-    if LoggedUser.getUserType() != UserType.RIDER:
+    rider = loggeduser(request.user)
+    if loggeduser(request.user).type != UserType.RIDER:
         return HttpResponse('Not authorised to access this page')
 
-    rides = RideTravelInfo.objects.filter(rider = LoggedUser.USER)
+    rides = RideTravelInfo.objects.filter(rider = rider)
    
     # for ride in rides:
     #     print(ride)
@@ -393,10 +364,10 @@ def rideList(request):
     print('home content', content, content.render())
 
 
-    return render(request, 'ride_list.html', {'ride_list': rides, 'title': 'Ride List', 'loggedin':LoggedUser.USER})
+    return render(request, 'ride_list.html', {'ride_list': rides, 'title': 'Ride List', 'loggedin':rider})
 
 def allApplicants(request):
-    if LoggedUser.USER is None:
+    if not request.session.get('loggedin', False):
         return redirect('signout')
 
     return HttpResponse('All Applicants')
@@ -404,104 +375,125 @@ def allApplicants(request):
 
 
 def search(request):
-    if LoggedUser.USER is None:
-        return redirect('signout')
 
-    page = request.GET.get('page', 1)
+    print("request.user.is_anonymous", request.user.is_anonymous)
+    if not request.session.get('loggedin', False):
+        return redirect('signout')
     form = AssetTransportRequestForm(request.POST)
 
-    normal_form = render(request, 'form.html', {'form': form,  'title': 'Search', 'loggedin':LoggedUser.USER})
 
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
         # check whether it's valid:
         if form.is_valid():
-            # print("valid form",form.cleaned_data)
             data = form.cleaned_data
-            
-            if data['date_time'] < datetime.datetime.now():
-                messages.warning(request, 'Please provide a valid date and time')
-                return normal_form
+            data['requester'] = Requester.objects.get(user=request.user)
+            print("valid form",data)
 
-            LoggedUser.TRANSPORTREQUEST = data
-            search_data = RideTravelInfo.objects.filter(from_location = data['from_location'], assets_quanity__gte=data['assets_quanity']).values()
+            search_request = AssetTransportationRequest.objects.create(**data)
+            search_request.save()
 
-            search_result = search_data
-            # print("search data", search_data, len(search_data))
+            print("search_request", search_request.id)
 
-            applied_data = Application.objects.filter(applicant=LoggedUser.USER)
-            
-            # applied_ride_ids = [i.ride_travel_info.id for i in applied_data]
 
-            apps = {}
-            for i in applied_data:
-                apps[i.ride_travel_info.id] = i.status
-            
 
-           
-            # print("statuses", apps)
+            # print("search request saved", search_request)
+
+
+            return redirect('match_rides', search_request.id)
         
 
-            for data1 in search_result:
-                data1['date_time'] = data1['date_time'].strftime("%d/%m/%Y, %H:%M %p")
-                data1['rider'] = Rider.objects.get(id=data1['rider_id'])
-                data1['apply_status'] = apps[data1['id']] if data1['id'] in apps else 'Apply'
-                data1['asset_type'] = data['asset_type']
-                data1['asset_sensitivity'] = data['asset_sensitivity']
-                data1['whom_to_deliver'] = data['whom_to_deliver']
-#
-            print("search result", search_result, "length", len(search_result))
-
-            # print("data1", data1, "length ", len(data1))
-
-            paginator = Paginator(search_result,page)
-
-            LoggedUser.Paginator = paginator
-
-            
-        
-    if request.GET.get('page') or request.method == 'POST':
-        
-        paginator = LoggedUser.Paginator
-
-        print("paginator", paginator.num_pages, paginator.count)
-        try:
-            search_result = paginator.page(page)   
-        except PageNotAnInteger:
-            search_result = paginator.page(1)
-        except EmptyPage:
-            search_result = paginator.page(paginator.num_pages)
-
-        return render(request, 'search_result.html', {'form': form,  'title': 'Search Result', 'matched_transportation_requests':search_result, 'loggedin':LoggedUser.USER})
-   
-
-    return normal_form
+    return render(request, 'form.html', {'form': form,  'title': 'Search', 'loggedin':loggeduser(request.user)})
+def match_rides(request, request_id):
 
 
-def ride_apply(request, ride_id):
-    if LoggedUser.USER is None:
+    if request.user.is_anonymous:
         return redirect('signout')
     if not request.user.is_authenticated:
         return redirect("signin")
 
-    if LoggedUser.getUserType() != UserType.REQUESTER:
+
+    if loggeduser(request.user).type != UserType.REQUESTER:
         return HttpResponse('Not authorised to access this page')
+
+
+    request_data = AssetTransportationRequest.objects.get(id=request_id)
+
     
 
+
+    search_data = RideTravelInfo.objects.filter(from_location = request_data.from_location, assets_quanity__gte= request_data.assets_quanity).values()
+    search_result = search_data
+    print("search_data", search_data)
+
+
+    applied_data = Application.objects.filter(applicant=Requester.objects.get(user=request.user))
+
+
+    apps = {}
+    for i in applied_data:
+        apps[i.ride_travel_info.id] = i.status
+    
+
+
+    for data1 in search_result:
+        data1['date_time'] = data1['date_time'].strftime("%d/%m/%Y, %H:%M %p")
+        data1['rider'] = Rider.objects.get(id=data1['rider_id'])
+        data1['apply_status'] = apps[data1['id']] if data1['id'] in apps else 'Apply'
+        data1['asset_type'] = request_data.asset_type
+        data1['asset_sensitivity'] = request_data.asset_sensitivity
+        data1['whom_to_deliver'] = request_data.whom_to_deliver
+        
+
+    print("search result", search_result, "length", len(search_result))
+
+            # print("data1", data1, "length ", len(data1))
+
+    paginator = Paginator(search_result,1)
+    # fetching the page no from url query parameter
+    page = request.GET.get('page', 1)
+    try:
+        search_result = paginator.page(page)   
+    except PageNotAnInteger:
+        search_result = paginator.page(1)
+    except EmptyPage:
+        search_result = paginator.page(paginator.num_pages)
+
+    
+
+    # return HttpResponse(f'match rides {request_id}')
+
+    return render(request, 'matched_rides.html', { 'title': 'Matched Rides', 'matched_transportation_requests':search_result, 'loggedin':loggeduser(request.user), 'request_id':request_id})
+
+
+
+def ride_apply(request, ride_id):
+
+    if not request.session.get('loggedin', False):
+        return redirect('signout')
+    if not request.user.is_authenticated:
+        return redirect("signin")
+
+    if loggeduser(request.user).type != UserType.REQUESTER:
+        return HttpResponse('Not authorised to access this page')
+    
+    request_id = request.GET.get('request_id', 0)
+
+    print("ride_apply: request_id", request_id)
     ride = RideTravelInfo.objects.get(id=ride_id)
     applicant = Requester.objects.get(user=request.user)
     print(ride)
-    # if not LoggedUser.TRANSPORTREQUEST_SAVED:
-    LoggedUser.TRANSPORTREQUEST = AssetTransportationRequest.objects.create(**LoggedUser.TRANSPORTREQUEST)
-    LoggedUser.TRANSPORTREQUEST.save()
-    LoggedUser.TRANSPORTREQUEST_SAVED = True
-    messages.success(request, "Asset Transport Request form saved")
     
-    LoggedUser.SearchList = None
-    application = Application.objects.create(applicant=applicant, assetTransportationRequest= LoggedUser.TRANSPORTREQUEST, ride_travel_info= ride)
-    application.save()
+    messages.success(request, "Asset Transport Request form saved")
+    if request_id:
+        application = Application.objects.create(applicant=applicant, assetTransportationRequest= AssetTransportationRequest.objects.get(id=request_id), ride_travel_info= ride)
+        application.save()
 
-    messages.success(request, "Application successfully applied")
+        messages.success(request, "Application successfully applied")
+    else:
+        messages.warning(request, "Invalid request id")
+
+
     # return HttpResponse(f'Apply for Transportation Request {ride_id} {ride} {application}')
     return redirect('home')
 

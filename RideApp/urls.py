@@ -1,7 +1,6 @@
 from django.urls import path
 
 from . import views
-from .views import SignUpView
 urlpatterns =[
     path('', views.index, name='index'),
     path('search', views.search, name='search_ride'),
@@ -14,6 +13,8 @@ urlpatterns =[
     path('signout/', views.signout, name='signout'),
     path('home/', views.home, name="home"),
 
+    # REQUESTER
+    path('match_rides/<int:request_id>', views.match_rides, name="match_rides"),
 
     # RIDER
     path('add_ride/', views.addRide, name= 'add_ride' ),

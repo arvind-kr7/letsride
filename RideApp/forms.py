@@ -23,6 +23,7 @@ class AssetTransportRequestForm(ModelForm):
     class Meta:
         model = AssetTransportationRequest
         fields = "__all__"
+        exclude = ('requester', )
         widgets= {
             'date_time' : forms.DateTimeInput(format=('%Y-%m,%H:%M'), attrs={'class':'myDateClass', 'type': 'datetime-local','placeholder':'Select a date', 'min':datetime.datetime.now()}),
             'assets_quanity': forms.NumberInput( attrs={'min':1})

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+
+{% if search_requests %}
+
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">From</th>
+            <th scope="col">To</th>
+            <th scope="col">Date and Time</th>
+            <th scope="col">Travel Medium</th>
+            <th scope="col">No of Assets</th>
+            <th scope="col">Asset Type</th>
+            <th scope="col">Asset Sensitivity</th>
+            <th scope="col" colspan="2">Whom To Deliver</th>
+    
+        
+      </tr> 
+    </thead>
+    <tbody>
+
+        {% for request in search_requests %}
+
+      <tr class="bg-light">
+        <th scope="row">{{request.from_location}}</th>
+        <td>{{request.to_location}}</td>
+        <td>{{request.date_time}}</td>
+        <td>{{request.travel_medium}}</td>
+        <td>{{request.assets_quanity}}</td>
+        <td>{{request.asset_type}}</td>
+        <td>{{request.asset_sensitivity}}</td>
+        <td>{{request.whom_to_deliver}} </td>
+        <td> <a href="/match_rides/{{request.id}}">{{request.id}} <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        
+        </td>
+    </a>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+
+
+{%else %}
+
+ No search request yet
+{% endif %}
+
+
+{% endblock %}

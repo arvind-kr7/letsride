@@ -81,7 +81,10 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'RidePortal.wsgi.application'
-
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 60
+LOGIN_REDIRECT_URL = 'RideApp:home'
+LOGOUT_REDIRECT_URL = 'RideApp:home'
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
