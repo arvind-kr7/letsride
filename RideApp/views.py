@@ -374,6 +374,46 @@ def allApplicants(request):
 
 
 
+def applications_received(request, ride_id):
+
+    if not request.session.get('loggedin', False):
+        return redirect('signout')
+    # form = AssetTransportRequestForm()
+    # return HttpResponse("Hello, World!")
+
+    if not request.user.is_authenticated:
+        return redirect("signin")
+
+    user = loggeduser(request.user)
+
+    if user.type !=UserType.RIDER:
+        return HttpResponse("You are not authorised")
+
+    ride = RideTravelInfo.objects.get(id = ride_id)
+
+    application_list = Application.objects.filter(ride_travel_info__rider=user, ride_travel_info = ride).order_by('assetTransportationRequest__date_time')
+
+    paginator = Paginator(application_list, 1)
+    page = request.GET.get('page', 1)
+
+    try:
+        application_list = paginator.page(page)   
+    except PageNotAnInteger:
+        application_list = paginator.page(1)
+    except EmptyPage:
+        application_list = paginator.page(paginator.num_pages)
+
+
+    context={'title':'Applications Received', 'application_list':application_list, 'loggedin':user, 'statusform': AppStatus.choices}
+
+
+
+
+    # return HttpResponse(f"applications received for {ride_id}")
+
+    return render(request, 'applications_received.html', context=context)
+
+
 def search(request):
 
     print("request.user.is_anonymous", request.user.is_anonymous)

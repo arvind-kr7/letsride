@@ -11,22 +11,28 @@
 <table class="table">
     <thead class="thead-dark">
       <tr class="text-uppercase">
-        <td scope="col">From</td>
-        <td scope="col">To</td>
-        <td scope="col">Date and Time</td>
-        <td scope="col">Travel Medium</td>
-        <td scope="col">Assets Quantity</td>
-       
+        <th>From</td>
+        <th>To</td>
+        <th>Date and Time</td>
+        <th>Travel Medium</td>
+        <th>Assets Quantity</td>
+        <th>Applications Received</th>
+        
       </tr>
     </thead>
     <tbody>
         {% for ride in ride_list %}
-            <tr>
+            <tr class="bg-light">
                 <td>{{ride.from_location}}</td>
                 <td>{{ride.to_location}}</td>
                 <td>{{ride.date_time}}</td>
                 <td>{{ride.travel_medium}}</td>
                 <td>{{ride.assets_quanity}}</td>
+                <td class="text-center"> <a href="/applications_received/{{ride.id}}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </a>
+              </td>
 
             </tr>
         {% endfor %}
